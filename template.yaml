@@ -14,7 +14,7 @@ Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
+      CodeUri: fetch_visitors/
       Handler: app.lambda_handler
       Runtime: python3.8
       Architectures:
@@ -57,6 +57,10 @@ Resources:
       TableClass: STANDARD
 
 Outputs:
+  # Define here what should be printed when the deployment finishes
+  # ...this can be used to pass info to other stacks (eg in a CI/CD workflow)
+  # ...or to click the final REST API endpoint created for an instant end2end test
+
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
