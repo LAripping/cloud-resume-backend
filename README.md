@@ -1,4 +1,51 @@
-# my-sam-tutorial-app
+# my-sam-tutorial-app 
+
+## Develop Locally
+> Notes for me
+- Download PyCharm and install the AWS IntelliJ Toolkit
+- Git clone and Open the project into PyCharm
+- Configure the AWS Toolkit with an IAM user and confirm you can access CloudWatch logs 
+  1. From the sidebar, expand the AWS Toolkit window
+  2. In the first dropdown, choose the IAM profile you've just configured
+  3. In the second dropdown pick `eu-west-2` region
+  4. Refresh
+  5. Under CloudWatch Logs, there should be an entry like `/aws/lambda/sam-app-... `
+
+
+### Python Lambda Function 
+
+To develop/test the Lambda function locally, using PyCharm in a WSL environment, you need a pyenv / pip / virtualenv combo:
+```bash
+$ cd hellow_world
+$ pyenv virtualenv 3.8.0 .venv
+$ pyenv activate .venv
+$ python3 -m pip install -r requirements.txt
+$ # do work, add imports... then update
+$ python3 -m pip freeze > requirements.txt
+```
+
+
+### AWS Resources
+
+When messing with the `template.yaml` adding/removing AWS resources, follow the flow below:
+
+
+```bash
+$ sam build
+$ # maybe sam package? if anything complains about the lack of S3 urls
+$ sam deploy --guided
+$ sam local invoke
+```
+
+After this has completed ok, do another commit
+
+if you get weird results after `sam local invoke` maybe wait for a min / kill docker, it could be the mounted FS...
+or just `cd ../ && cd -`
+
+
+<hr>
+
+# Boilerplate README below
 
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
 
@@ -128,3 +175,6 @@ aws cloudformation delete-stack --stack-name my-sam-tutorial-app
 See the [AWS SAM developer guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) for an introduction to SAM specification, the SAM CLI, and serverless application concepts.
 
 Next, you can use AWS Serverless Application Repository to deploy ready to use Apps that go beyond hello world samples and learn how authors developed their applications: [AWS Serverless Application Repository main page](https://aws.amazon.com/serverless/serverlessrepo/)
+
+
+

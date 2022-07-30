@@ -4,11 +4,11 @@ Description: >
   my-sam-tutorial-app
 
   Sample SAM Template for my-sam-tutorial-app
-#
-## More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-#Globals:
-#  Function:
-#    Timeout: 3
+
+
+Globals:
+  Function:
+    Timeout: 5
 
 Resources:
   HelloWorldFunction:
@@ -19,6 +19,19 @@ Resources:
       Runtime: python3.8
       Architectures:
         - x86_64
+      Policies:
+        # Give the Lambda function the least required permissions for DynamoDB ops TODO are sids necessary?
+        - Statement:
+            - Sid: VisualEditor0
+              Effect: Allow
+              Action:
+              - dynamodb:PutItem
+              Resource: 'arn:aws:dynamodb:eu-west-2:614776424286:table/VisitorsSam'
+            - Sid: VisualEditor1
+              Effect: Allow
+              Action:
+              - dynamodb:Scan
+              Resource: 'arn:aws:dynamodb:eu-west-2:614776424286:table/VisitorsSam'
       Events:
         HelloWorld:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
