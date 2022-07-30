@@ -20,15 +20,12 @@ Resources:
       Architectures:
         - x86_64
       Policies:
-        # Give the Lambda function the least required permissions for DynamoDB ops TODO are sids necessary?
         - Statement:
-            - Sid: VisualEditor0
-              Effect: Allow
+            - Effect: Allow
               Action:
               - dynamodb:PutItem
               Resource: 'arn:aws:dynamodb:eu-west-2:614776424286:table/VisitorsSam'
-            - Sid: VisualEditor1
-              Effect: Allow
+            - Effect: Allow
               Action:
               - dynamodb:Scan
               Resource: 'arn:aws:dynamodb:eu-west-2:614776424286:table/VisitorsSam'
