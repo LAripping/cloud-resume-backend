@@ -24,6 +24,7 @@ $ # do work, add imports... then update
 $ python3 -m pip freeze > requirements.txt
 ```
 
+Note that PyCharm won't work well with an interpreter inside WSL, so instead create another virtualenv interpreter for the project in Windows land, based off of Python(.exe) 3.8  with the `fetch_visitors/requirements.txt`. Name the virtualenv `venv` as to be ignored by git.
 
 ### AWS Resources
 

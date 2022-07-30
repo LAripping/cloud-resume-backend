@@ -1,18 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  my-sam-tutorial-app
-
-  Sample SAM Template for my-sam-tutorial-app
-
+Description: SAM template for the cloud resume backend stack
 
 Globals:
   Function:
     Timeout: 5
 
 Resources:
-  HelloWorldFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  FetchVisitorsFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: fetch_visitors/
       Handler: app.lambda_handler
@@ -30,10 +26,12 @@ Resources:
               - dynamodb:Scan
               Resource: 'arn:aws:dynamodb:eu-west-2:614776424286:table/VisitorsSam'
       Events:
-        HelloWorld:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+        # Events that can trigger this function - here it's just an API call
+        FetchApiEvent:
+          Type: Api
+          # This will create an implicit RestAPI resource
           Properties:
-            Path: /hello
+            Path: /fetch-update-visitor-count
             Method: get
 
   VisitorsTable:
@@ -61,15 +59,15 @@ Outputs:
   # ...this can be used to pass info to other stacks (eg in a CI/CD workflow)
   # ...or to click the final REST API endpoint created for an instant end2end test
 
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  ApiCreated:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/fetch-update-visitor-count"
+    # TODO find a way to parameterize the path above
+  FunctionCreated:
+    Description: "Lambda Function ARN"
+    Value: "FetchVisitorsFunction"
+  IamRoleCreated:
+    Description: "Implicit IAM Role created"
+    Value: !GetAtt FetchVisitorsFunctionRole.Arn
+    # !GetAtt is the Short form of the intrinsic function to get an attribute from a
+    # resource defined (explicitly or implicitly) in the template
