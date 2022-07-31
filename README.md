@@ -2,14 +2,49 @@
 
 ## Develop Locally
 > Notes for me
+
 - Download PyCharm and install the AWS IntelliJ Toolkit
 - Git clone and Open the project into PyCharm
-- Configure the AWS Toolkit with an IAM user and confirm you can access CloudWatch logs 
+- Configure the AWS Toolkit with an IAM user (eg. `aws-toolkit`) and confirm you can access CloudWatch logs 
   1. From the sidebar, expand the AWS Toolkit window
-  2. In the first dropdown, choose the IAM profile you've just configured
+  2. In the first dropdown, choose the `aws-toolkit` IAM profile you've just configured
   3. In the second dropdown pick `eu-west-2` region
   4. Refresh
   5. Under CloudWatch Logs, there should be an entry like `/aws/lambda/sam-app-... `
+
+
+
+### SAM CLI prep
+
+On first run, configure SAM cli as follows 
+1. Create an IAM user for the SAM CLI (eg. `samcli`)
+> Follow Least Privilege Principle: the minimum set of permissions it needs to work most of the times is described [here](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-permissions.html#sam-permissions-managed-policies) 
+2. Configure your AWS CLI with its creds (*as the default profile*) using `aws configure` 
+> Unfortunately SAM CLI doesn't consistently follow `AWS_PROFILE` env, so we need have samcli be the default globally  
+3. Extract the (fixed and rigid) stack name from conf, to use in commands
+```bash
+$ STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
+```
+
+
+
+### AWS Resources
+
+When messing with the `template.yaml` adding/removing AWS resources, follow the SAM cli workflow below:
+
+
+```bash
+$ sam build # --use-container takes way too long
+$ # sam package <- use this to feed packaged.yaml to the next steps, if anything complains about the lack of S3 urls
+$ sam deploy --stack-name $STACK_NAME  
+$ sam local invoke      # tests the function
+$ sam local start-api   # tests the API + the function 
+```
+
+From now on, you can edit/test the Python code as described below, and see it live by hitting http://127.0.0.1:3000/fetch-update-visitor-count. 
+- No need to rebuild/redeploy as changes will appear instantly (mounted docker env)
+- Do rebuild if you change `template.yaml`
+
 
 
 ### Python Lambda Function 
@@ -26,53 +61,16 @@ $ python3 -m pip freeze > requirements.txt
 
 Note that PyCharm won't work well with an interpreter inside WSL, so instead create another virtualenv interpreter for the project in Windows land, based off of Python(.exe) 3.8  with the `fetch_visitors/requirements.txt`. Name the virtualenv `venv` as to be ignored by git.
 
-### AWS Resources
-
-When messing with the `template.yaml` adding/removing AWS resources, follow the flow below:
 
 
-```bash
-$ sam build
-$ # maybe sam package? if anything complains about the lack of S3 urls
-$ # sam deploy --guided
-$ sam deploy  --config-file samconfig.toml --profile samcli --stack-name sam-
-app
-$ sam local invoke
-```
 
-After this has completed ok, do another commit
-
-if you get weird results after `sam local invoke` maybe wait for a min / kill docker, it could be the mounted FS...
-or just `cd ../ && cd -`
-
+### Troubleshooting 
+- If you get weird Python SAM cli errors after `sam local invoke` maybe wait for a min / kill docker, it could be the mounted FS... or just `cd ../ && cd -`
+- `sam deploy` complaining with "S3 Bucket not specified..." might be a silent permissions problem, as implicit assumption of an unintended profile forces the S3 call to fail misinterpretting it as an empty response. Make sure the right profile is picked up with `--debug`  
 
 <hr>
 
 # Boilerplate README below
-
-This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
-
-- hello_world - Code for the application's Lambda function.
-- events - Invocation events that you can use to invoke the function.
-- tests - Unit tests for the application code. 
-- template.yaml - A template that defines the application's AWS resources.
-
-The application uses several AWS resources, including Lambda functions and an API Gateway API. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
-
-If you prefer to use an integrated development environment (IDE) to build and test your application, you can use the AWS Toolkit.  
-The AWS Toolkit is an open source plug-in for popular IDEs that uses the SAM CLI to build and deploy serverless applications on AWS. The AWS Toolkit also adds a simplified step-through debugging experience for Lambda function code. See the following links to get started.
-
-* [CLion](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [GoLand](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [IntelliJ](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [WebStorm](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [Rider](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [PhpStorm](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [PyCharm](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [RubyMine](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [DataGrip](https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/welcome.html)
-* [VS Code](https://docs.aws.amazon.com/toolkit-for-vscode/latest/userguide/welcome.html)
-* [Visual Studio](https://docs.aws.amazon.com/toolkit-for-visual-studio/latest/user-guide/welcome.html)
 
 ## Deploy the sample application
 
