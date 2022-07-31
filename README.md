@@ -34,7 +34,9 @@ When messing with the `template.yaml` adding/removing AWS resources, follow the 
 ```bash
 $ sam build
 $ # maybe sam package? if anything complains about the lack of S3 urls
-$ sam deploy --guided
+$ # sam deploy --guided
+$ sam deploy  --config-file samconfig.toml --profile samcli --stack-name sam-
+app
 $ sam local invoke
 ```
 
