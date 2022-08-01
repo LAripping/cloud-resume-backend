@@ -6,18 +6,18 @@ def lambda_handler(event, context):
     """
     Processes client info (UA/IP) and adds them to the DB if they don't exist
 
-    Paramters:
-    event   : the JSON input
-    context : ?
+    Parameters:
+        event (dict): the JSON input
+        context (dict): ?
 
     Returns:
-    JSON with params:
-    result   : "added|found|error"
-    visitors : N
-    error    : (exception message if thrown)
+        dict: A JSON with keys
+            result (str): "added|found|error"
+            visitors (int): N
+            error (str): Stringified exception message if thrown
     """
 
-    # print(event["requestContext"])
+    # TODO break it up to 3 funcs honoring SRP
 
     # Trying recursively (TODO deterministically)
     #  to get UA and IP, by just walking over

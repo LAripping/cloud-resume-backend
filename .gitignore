@@ -393,3 +393,4 @@ $RECYCLE.BIN/
 
 # Added directly by LAripping
 .idea
+boto_user_credentials.csv
