@@ -9,7 +9,7 @@ The SAM stack consists of:
 - A Python Lambda Function : serving as the controller that bridges the two
 
 Extra goodies
-- [ ] [Tests](#Tests Written) (Integration & Unit)
+- [ ] [Tests](#tests-written) (Integration & Unit)
 - [ ] CI/CD pipelines (using Github Actions)
 
 
@@ -38,6 +38,26 @@ On first run, configure SAM cli as follows
 ```bash
 $ STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
 ```
+4. Set an alias to un-screw `os.getcwd()` after Docker-juggling (see the relevant [Troubleshooting](#troubleshooting) issue)
+```bash
+$ alias recd=cd ../ && cd -
+```
+
+
+### Python Setup 
+
+To develop/test the Lambda function locally, using PyCharm in a WSL environment, you first need to setup the Python environment.  
+We'll use a pyenv / pip / virtualenv combo:
+```bash
+$ cd hellow_world
+$ pyenv virtualenv 3.8.0 .venv
+$ pyenv activate .venv
+$ python3 -m pip install -r requirements.txt
+$ # do work, add imports... then update
+$ python3 -m pip freeze > requirements.txt
+```
+
+Note that PyCharm won't work well with an interpreter inside WSL, so instead create another virtualenv interpreter for the project in Windows land, based off of Python(.exe) 3.8  with the `fetch_visitors/requirements.txt`. Name the virtualenv `venv` as to be ignored by git. Then finally `pip install -r requirements.txt` using that Windows-land `venv/python.exe` 
 
 
 
@@ -49,7 +69,7 @@ When messing with the `template.yaml` adding/removing AWS resources, follow the 
 ```bash
 $ sam build # --use-container takes way too long
 $ # sam package <- use this to feed packaged.yaml to the next steps, if anything complains about the lack of S3 urls
-$ sam deploy --stack-name $STACK_NAME  
+$ sam deploy  
 $ sam local invoke      # tests the function
 $ sam local start-api   # tests the API + the function 
 ```
@@ -58,21 +78,22 @@ From now on, you can edit/test the Python code as described below, and see it li
 - No need to rebuild/redeploy as changes will appear instantly (mounted docker env)
 - Do rebuild if you change `template.yaml`
 
+### Running Locally/Remotely
 
+One-liners
 
-### Python Lambda Function 
-
-To develop/test the Lambda function locally, using PyCharm in a WSL environment, you need a pyenv / pip / virtualenv combo:
+- To test locally
 ```bash
-$ cd hellow_world
-$ pyenv virtualenv 3.8.0 .venv
-$ pyenv activate .venv
-$ python3 -m pip install -r requirements.txt
-$ # do work, add imports... then update
-$ python3 -m pip freeze > requirements.txt
+$ recd && sam build && sam local invoke -e events/event.json
+# and see logs in your terminal
 ```
 
-Note that PyCharm won't work well with an interpreter inside WSL, so instead create another virtualenv interpreter for the project in Windows land, based off of Python(.exe) 3.8  with the `fetch_visitors/requirements.txt`. Name the virtualenv `venv` as to be ignored by git. Then finally `pip install -r requirements.txt` using that Windows-land `venv/python.exe` 
+- To test remotely
+```bash
+$ recd && sam build && sam deploy
+# then Hit in chrome
+# ...and look at CloudWatch logs in PyCharm
+```
 
 
 ### ~~Fetch, tail, and filter Lambda function logs~~
@@ -93,7 +114,7 @@ You can find more information and examples about filtering Lambda function logs 
 ### Run Tests
 > 🔑 Note that at least one integration test uses `boto3` client which needs to be configured with an IAM user allowed to `DescribeStacks:*`. Creds for this can be passed as environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
-Tests are defined in the `tests` folder in this project and their `requirements.txt` are covered by the top-level ones. See [Tests Written](#Tests Written) section for a listing.
+Tests are defined in the `tests` folder in this project and their `requirements.txt` are covered by the top-level ones. See [Tests Written](#tests-written) section for a listing.
 To run test suites:
 - from PyCharm: right-click the `tests` subdirectory and click "Run 'Python tests in test'..."
 - in terminal: 

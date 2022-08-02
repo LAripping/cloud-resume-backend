@@ -6,6 +6,6 @@ stack_name = "sam-app"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1k4lgro2f4afs"
 s3_prefix = "sam-app"
 region = "eu-west-2"
-confirm_changeset = true
+confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
