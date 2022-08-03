@@ -99,7 +99,7 @@ class TestApiGateway(TestCase):
 
     def test_random_new_useragent(self):
         """
-        Send a request with no User-Agent and check the response matches the expected format and error msg
+        Send a request with a time-based random User-Agent and check if it's added, both through the API and in the DB
         """
 
         # Arrange
@@ -122,3 +122,15 @@ class TestApiGateway(TestCase):
         # Cleanup DB
         self.delete_db_item(myIP,randUA)
 
+    def test_no_timeout(self):
+        """
+        Ensure no timeout after 10" occur neither on the server nor on the client
+        """
+        TIMEOUT_SEC = 10
+
+        try:
+            response = requests.get(self.api_endpoint, timeout=TIMEOUT_SEC)
+        except requests.exceptions.Timeout:
+            self.fail("Client timed out!")
+
+        self.assertNotEqual(response.status_code, 504, "Server timed out!")

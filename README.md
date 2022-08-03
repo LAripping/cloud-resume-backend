@@ -143,7 +143,7 @@ $ python -m pytest tests/integration -v
   > "End 2 End"
 
   - [x] URL of API created responds to GET request as expected (200, json, valid result & count fields)
-  - [ ] Request takes less than 10 seconds to complete (= the timeout set server-side) to maintain performance when DB grows
+  - [x] Request takes less than 10 seconds to complete (= the timeout set server-side) to maintain performance when DB grows
   - [x] GET with time-based random UA results in addition (in JSON *and* by checking in the DB)
 
 
