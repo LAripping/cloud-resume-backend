@@ -142,13 +142,11 @@ $ python -m pytest tests/integration -v
   > Testing multiple components at once  
   > "End 2 End"
 
-  - [x] URL of API created responds to GET request as expected
+  - [x] URL of API created responds to GET request as expected (200, json, valid result & count fields)
+  - [ ] Request takes less than 10 seconds to complete (= the timeout set server-side) to maintain performance when DB grows
+  - [x] GET with time-based random UA results in addition (in JSON *and* by checking in the DB)
 
-  - [ ] GET with time-based random UA results in addition (in JSON *and* by checking in the DB - #moreBotoPerms)
 
-    > Can we somehow delete this entry from the table in a cleanup phase?  #moreBotoPerms
-
-  - [ ] What happens when no `User-Agent` header s provided 
 
 ### Unit Tests
 
@@ -156,9 +154,13 @@ $ python -m pytest tests/integration -v
   > Testing one single component at a time, to confirm that it operates in the right way. Helps you to isolate what is broken in your application and fix it faster  
   > "Per-Feature"
 
-  - [ ] fetch UA & IP
-  - [ ] Put into table
-  - [ ] Table query
+  - Step 1: fetch UA & IP
+    - [ ]  no `User-Agent` header is provided 
+    > We can't execute this as an integration test (end2end) as CloudFront adds it's own UA.  
+    > So the only way to evaluate this path is to isolate step 1's method, and pass a no-UA event to it => check outcome
+    - [ ] an existing IP is provided (find one from DB #moreBotoPerms )
+  - Step 2: Put into table
+  - Step 3: Table query
 
 
 

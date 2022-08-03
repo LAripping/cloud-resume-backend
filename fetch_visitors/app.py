@@ -32,16 +32,10 @@ def lambda_handler(event, context):
         return fu.send_resp(result, count, errorMsg)
 
 
-
-
-
-
-
-
 class FetchUpdate:
     """
     Runner class to perform the ops we need and save internal state.
-    Consists of 4 self-explanatory Methods executing one step each, as per the Single Responsibility Principle
+    Consists of 4 self-explanatory Methods executing one step each, as per the Single Responsibility Principle (SRP)
 
     Methods
     -------
@@ -51,11 +45,13 @@ class FetchUpdate:
         send_resp():
     """
 
+    ERR_NO_IP = "Couldn't extract source IP! Skipping insertion"
+    ERR_NO_UA = "Couldn't extract UA! Skipping insertion"
+
     def __init__(self, event):
         self.event = event
         self.client = boto3.client('dynamodb')
         self.dynamodb = boto3.resource('dynamodb')
-
 
     def extract_ip_ua(self) -> tuple:
         """
@@ -64,7 +60,7 @@ class FetchUpdate:
         all the places these could be found in
         :return: (ip,ua) a 2-tuple of strings if found
         :rtype: tuple
-        :raises:
+        :raises: Exception when IP/UA can't be found
         """
         log.info("Event object passed:\n%s", self.event)
 
@@ -77,9 +73,8 @@ class FetchUpdate:
                 and ("sourceIp" in self.event["requestContext"]["identity"]):
             ip = self.event["requestContext"]["identity"]["sourceIp"]
         else:
-            msg = "Couldn't extract source IP! Skipping insertion"
-            log.error(msg)
-            raise Exception(msg)
+            log.error(FetchUpdate.ERR_NO_IP)
+            raise Exception(FetchUpdate.ERR_NO_IP)
 
         if ("requestContext" in self.event) \
                 and ("http" in self.event["requestContext"]) \
@@ -93,13 +88,11 @@ class FetchUpdate:
                 and ("User-Agent" in self.event["headers"]):
             ua = self.event["headers"]["User-Agent"]
         else:
-            msg = "Couldn't extract UA! Skipping insertion"
-            log.error(msg)
-            raise Exception(msg)
+            log.error(FetchUpdate.ERR_NO_UA)
+            raise Exception(FetchUpdate.ERR_NO_UA)
 
         log.info("Successfully extracted IP (%s) and UA (%s)", ip,ua)
         return ip, ua
-
 
     def db_putitem(self, ip, ua) -> str:
         """
@@ -125,7 +118,6 @@ class FetchUpdate:
             result = "found"
         return result
 
-
     def db_scan(self) -> int:
         """
         Step 3: Query DB for the number of total visitors seen
@@ -143,7 +135,6 @@ class FetchUpdate:
             }
         )
         return scan_resp["Count"]
-
 
     def send_resp(self, result, count, errorMsg: str) -> dict:
         """
