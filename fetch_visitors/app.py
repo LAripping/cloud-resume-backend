@@ -2,7 +2,7 @@ import json
 import boto3
 import logging
 log = logging.getLogger()
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 
 def lambda_handler(event, context):
     """
@@ -50,8 +50,8 @@ class FetchUpdate:
 
     def __init__(self, event):
         self.event = event
-        self.client = boto3.client('dynamodb')
-        self.dynamodb = boto3.resource('dynamodb')
+        self.client = boto3.client('dynamodb', region_name='eu-west-2')
+        self.dynamodb = boto3.resource('dynamodb', region_name='eu-west-2')
 
     def extract_ip_ua(self) -> tuple:
         """
@@ -62,7 +62,8 @@ class FetchUpdate:
         :rtype: tuple
         :raises: Exception when IP/UA can't be found
         """
-        log.info("Event object passed:\n%s", self.event)
+        log.debug("Event object passed (as JSON):\n%s", json.dumps(self.event))
+        # friendly for copy(from logs)-paste(into a new events/event.json file)
 
         if ("requestContext" in self.event) \
                 and ("http" in self.event["requestContext"]) \

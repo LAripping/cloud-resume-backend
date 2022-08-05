@@ -84,7 +84,7 @@ One-liners
 
 - To test locally
 ```bash
-$ recd && sam build && sam local invoke -e events/event.json
+$ recd && sam build && sam local invoke -e events/event-from-browser.json
 # and see logs in your terminal
 ```
 
@@ -112,7 +112,11 @@ You can find more information and examples about filtering Lambda function logs 
 
 
 ### Run Tests
-> 🔑 Note that at least one integration test uses `boto3` client which needs to be configured with an IAM user allowed to `DescribeStacks:*`. Creds for this can be passed as environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+> 🔑 Note that at least one integration test uses `boto3` client which needs to be configured with an IAM user allowed to 
+> - `cloudformation:DescribeStacks:*`
+> - `dynamodb:Scan:VisitorsSam`
+> - `dynamodb:DynamoDeleteItem:VisitorsSam`
+> Creds for this can be passed as environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
 
 Tests are defined in the `tests` folder in this project and their `requirements.txt` are covered by the top-level ones. See [Tests Written](#tests-written) section for a listing.
 To run test suites:
@@ -154,13 +158,25 @@ $ python -m pytest tests/integration -v
   > Testing one single component at a time, to confirm that it operates in the right way. Helps you to isolate what is broken in your application and fix it faster  
   > "Per-Feature"
 
-  - Step 1: fetch UA & IP
-    - [ ]  no `User-Agent` header is provided 
+  - Step 1: Extract IP & UA
+    - [ ] an existing IP/UA pair is provided (find one from DB beforehand #moreBotoPerms / mock DB funcs )
+    - [x] no `User-Agent` header is provided 
     > We can't execute this as an integration test (end2end) as CloudFront adds it's own UA.  
     > So the only way to evaluate this path is to isolate step 1's method, and pass a no-UA event to it => check outcome
-    - [ ] an existing IP is provided (find one from DB #moreBotoPerms )
-  - Step 2: Put into table
-  - Step 3: Table query
+  - Step 2: DB Put Item
+  - Step 3: DB Scan
 
+### Design Decisions
+Documenting the "why"s regarding the organisation and implementation of test code 
 
+1.`pytest` instead of `unittest`, mainly due to [this](https://www.slant.co/versus/9148/9149/~unittest_vs_pytest)
+  - so we'll use `@fixtures` instead of `self.setUp`
+  - for fixtures involving events we'll extract into files to allow re-use 
+  - we're allowed to have some stray `test_*` methods in `.py` files, instead of class-methods only
+  - we'll simply name test case classes `Test*`, we won't subclass `unittest.TestCase`
+2. [Integration] One `test*.py` file > One `class Test*` per feature > One `def test_*` method per case...
+3. [Unit] One `test*.py` file per ~~src file~~ ~~src class~~ feature (so add a new one when the profiling comes in) > One `class Test*` per Step > One `def test_*`per case
+4. simple `assert expr` without messages, to make use of pytest's Advanced Assertion Introspection (AAI). Not unittest's redundant `self.assertSomething`  
+5. Annotate with `#Arrange -> #Act -> #Assert`
 
+==TODO== Insert pic here of the PyCharm test output window highlighting the organisation
