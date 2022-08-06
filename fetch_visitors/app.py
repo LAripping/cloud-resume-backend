@@ -127,12 +127,10 @@ class FetchUpdate:
             else:
                 log.error(FetchUpdate.ERR_PUT_ITEM, str(ce))
                 raise ce
-        # except self.dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
-        #     log.info("Visitor details already in the database. Not added")
-        #     result = "found"
-        # except Exception as e:  # Unexpected error. re-raise it
-        #     log.error(FetchUpdate.ERR_PUT_ITEM, str(e))
-        #     raise e
+        except Exception as e:
+            log.error(FetchUpdate.ERR_PUT_ITEM, str(e))     # her ewe only log FetchUpdate.ERR_PUT_ITEM,
+            raise e                                         # ...and not specify it, as we're interested in the orig msg
+
         return result
 
     def db_scan(self) -> int:
