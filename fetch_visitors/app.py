@@ -1,6 +1,9 @@
 import json
 import boto3
 import logging
+
+import botocore
+
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
@@ -47,11 +50,12 @@ class FetchUpdate:
 
     ERR_NO_IP = "Couldn't extract source IP! Skipping insertion"
     ERR_NO_UA = "Couldn't extract UA! Skipping insertion"
+    ERR_PUT_ITEM = "Unexpected error while putting item: %s"
 
     def __init__(self, event):
         self.event = event
         self.client = boto3.client('dynamodb', region_name='eu-west-2')
-        self.dynamodb = boto3.resource('dynamodb', region_name='eu-west-2')
+        self.dynamodb = boto3.resource('dynamodb', region_name='eu-west-2') # needed for the exception
 
     def extract_ip_ua(self) -> tuple:
         """
@@ -99,8 +103,9 @@ class FetchUpdate:
         """
         Step 2: Try to add visitor info to DB if not exists
 
-        :return: The result of the database insertion (added|found|error)
+        :return: The result of the database insertion (added|found) OR throws
         :rtype: str
+        :raises: Exception when PutItem operation fails
         """
 
         try:
@@ -112,11 +117,22 @@ class FetchUpdate:
                 },
                 ConditionExpression='attribute_not_exists(IP) and attribute_not_exists(UA)'
             )
+            log.debug("put_item response: %s", json.dumps(putitem_resp, indent=2))
             log.info("Visitor details added to the database")
             result = "added"
-        except self.dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
-            log.info("Visitor details already in the database. Not added")
-            result = "found"
+        except botocore.exceptions.ClientError as ce:
+            if ce.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                log.info("Visitor details already in the database. Not added")
+                result = "found"
+            else:
+                log.error(FetchUpdate.ERR_PUT_ITEM, str(ce))
+                raise ce
+        # except self.dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
+        #     log.info("Visitor details already in the database. Not added")
+        #     result = "found"
+        # except Exception as e:  # Unexpected error. re-raise it
+        #     log.error(FetchUpdate.ERR_PUT_ITEM, str(e))
+        #     raise e
         return result
 
     def db_scan(self) -> int:
