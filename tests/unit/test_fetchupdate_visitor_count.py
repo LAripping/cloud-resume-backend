@@ -1,14 +1,9 @@
 import json
-from unittest.mock import patch, Mock
-
 import boto3
 import botocore
 import pytest
-from pytest_mock import mocker
-
-import fetch_visitors
+from unittest.mock import Mock, MagicMock
 from fetch_visitors.app import FetchUpdate
-from fetch_visitors import app
 from botocore.exceptions import ClientError
 
 
@@ -19,27 +14,30 @@ def event_no_ua():
     return json.loads( open('events/event-no-ua.json').read() )
 
 
-
+# For future use
 sample_db = [
     ("10.0.0.1", "Mozilla/1.0 (Pam's Laptop)"),  # home connection, primary device
     ("10.0.0.2", "Mozilla/1.0 (Pam's Laptop)"),  # home connection but the dynIP changed
     ("10.0.0.1", "Webkit/2.4 - Android"),  # home connection, from mobile device
 ]
 
-def mock_put_item(**kwargs):
-    ip_passed = kwargs["Item"]["IP"]["S"]
-    ua_passed = kwargs["Item"]["UA"]["S"]
-    if not (isinstance(ip_passed, str) and isinstance(ua_passed, str)):
-        raise TypeError  # random exception, anything other than the ConditionalCheckFailedException
-    elif (ip_passed, ua_passed) in TestDbPutItem.sample_db:
-        return None  # no exception thrown -> Insertion Succeeded
-    else:
-        dynares = boto3.resource('dynamodb')
-        raise dynares.meta.client.exceptions.ConditionalCheckFailedException
+def put_item_mock_that_returns(**kwargs):
+    resp_mock = MagicMock(spec=dict) # spec is needed to mock the json.dumps(put_item_resp) that takes place right after the op
+    resp_mock.return_value = ""
+    return resp_mock
 
-class mock_client:
-    def put_item(**kwargs):
-        return mock_put_item(**kwargs)
+def put_item_mock_that_throws_ccfe(**kwargs):
+    error_response = {"Error": {"Code": "ConditionalCheckFailedException"}}
+    ccfe = botocore.exceptions.ClientError(error_response, "dummyop")
+    raise ccfe
+
+def put_item_mock_that_throws_other_clienterror(**kwargs):
+    error_response = {"Error": {"Code": "StillAClientError"}}
+    ce = botocore.exceptions.ClientError(error_response, "dummyop")
+    raise ce
+
+def put_item_mock_that_throws_other(**kwargs):
+    raise Exception # just a generic exception, not a ClientError that could signify existence
 
 
 
@@ -56,44 +54,31 @@ class TestExtractIPUA:
 
 class TestDbPutItem:
 
-    @pytest.mark.parametrize("ip,ua,exp_result",[
-        ("10.0.0.1", "Mozilla/1.0 (Pam's Laptop)", "found"),
-        ("10.0.0.1", "Webkit/2.4 - Android", "found"),
-        ("10.0.0.2", "Webkit/2.4 - Android", "added"),  # Pam's mobile device but after dynIP changed
-        ("8.7.8.7", "Webkit/2.4 - Android", "added")  # Pam's mobile device but from 4G connection
-    ])
-    def test_notexists_in_db(self, ip, ua, exp_result):
+    def test_notexists_in_db(self):
+        """
+        :return:
+        """
         fu = FetchUpdate(None)
         fu.client = Mock()
-        fu.client.put_item.return_value = {} # put_item will return anything but won't throw
+        fu.client.put_item.side_effect = put_item_mock_that_returns
 
-        result = fu.db_putitem(ip,ua)
+        result = fu.db_putitem("dummyIP","that_returns")
 
         assert fu.client.put_item.called_once()
         assert result == "added"
 
-    @pytest.mark.parametrize("ip,ua,exp_result", [
-        ("10.0.0.2", "Webkit/2.4 - Android", "added"),  # Pam's mobile device but after dynIP changed
-        ("8.7.8.7", "Webkit/2.4 - Android", "added")    # Pam's mobile device but from 4G connection
-    ])
-    def test_exists_in_db(self, ip, ua, exp_result):
+
+    def test_exists_in_db(self):
         fu = FetchUpdate(None)
         fu.client = Mock()
-        error_response = {"Error":{"Code":"ConditionalCheckFailedException"}}
-        operation_name = "whocares"
-        ce = botocore.exceptions.ClientError(error_response,operation_name)
-        fu.client.put_item.side_effect = ce
+        fu.client.put_item.side_effect = put_item_mock_that_throws_ccfe
 
-        result = fu.db_putitem(ip, ua)
+        result = fu.db_putitem("dummyIP","dummyUA")
 
         assert fu.client.put_item.called_once()
         assert result == "found"
 
-    @pytest.mark.parametrize("ip,ua,exp_result", [
-        ("10.0.0.2", "Webkit/2.4 - Android", "added"),  # Pam's mobile device but after dynIP changed
-        ("8.7.8.7", "Webkit/2.4 - Android", "added")    # Pam's mobile device but from 4G connection
-    ])
-    def test_db_clienterror_fail(self, ip, ua, exp_result):
+    def test_db_clienterror_fail(self):
         """
         Assessing path app.py:128-129
         :param ip:
@@ -103,22 +88,15 @@ class TestDbPutItem:
         """
         fu = FetchUpdate(None)
         fu.client = Mock()
-        error_response = {"Error":{"Code":"StillAClientError"}}
-        operation_name = "whocares"
-        ce = botocore.exceptions.ClientError(error_response,operation_name)
-        fu.client.put_item.side_effect = ce
+        fu.client.put_item.side_effect = put_item_mock_that_throws_other_clienterror
 
         with pytest.raises(Exception) as e:
-            result = fu.db_putitem(ip, ua)
+            result = fu.db_putitem("dummyIP","dummyUA")
 
         assert fu.client.put_item.called_once()
 
 
-    @pytest.mark.parametrize("ip,ua", [
-        (42, "Mozilla/1.0 (Pam's Laptop)"),
-        ("10.0.0.1", True)
-    ])
-    def test_db_other_fail(self, ip, ua, mocker):
+    def test_db_other_fail(self):
         """
         Assessing path app.py:131-132
         :param ip:
@@ -129,10 +107,10 @@ class TestDbPutItem:
         """
         fu = FetchUpdate(None)
         fu.client = Mock()
-        fu.client.put_item.side_effect = Exception  # just a generic exception, not a ClientError that could signify existence
+        fu.client.put_item.side_effect = put_item_mock_that_throws_other
 
         with pytest.raises(Exception) as e:
-            result = fu.db_putitem(ip, ua)
+            result = fu.db_putitem("dummyIP","dummyUA")
 
         assert fu.client.put_item.called_once()
 

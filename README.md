@@ -150,7 +150,7 @@ $ python -m pytest tests/integration -v
   - [x] Request takes less than 10 seconds to complete (= the timeout set server-side) to maintain performance when DB grows
   - [x] GET with time-based random UA results in addition (in JSON *and* by checking in the DB)
 
-
+ 
 
 ### Unit Tests
 
@@ -158,12 +158,15 @@ $ python -m pytest tests/integration -v
   > Testing one single component at a time, to confirm that it operates in the right way. Helps you to isolate what is broken in your application and fix it faster  
   > "Per-Feature"
 
+  - Step 0: Class instantiation
+    - [ ] Boto Clients have been instantiated ok
   - Step 1: Extract IP & UA
-    - [ ] an existing IP/UA pair is provided (find one from DB beforehand #moreBotoPerms / mock DB funcs )
-    - [x] no `User-Agent` header is provided 
-    > We can't execute this as an integration test (end2end) as CloudFront adds it's own UA.  
-    > So the only way to evaluate this path is to isolate step 1's method, and pass a no-UA event to it => check outcome
-  - Step 2: DB Put Item
+    - [x] no `User-Agent` header is provided
+  - Step 2: DB Put Item : faking `boto3.client('dynamodb').put_item()`to ... ->  ensure our `db_putitem()` ...
+    - [x] return but not throw -> returns "added"
+    - [x] throw the "ConditionalCheckFailedException" -> returns "found"
+    - [x] throw any other "ClientError" -> throws as well
+    - [x] throw any other Exception -> throws as well
   - Step 3: DB Scan
 
 ### Design Decisions
@@ -174,9 +177,10 @@ Documenting the "why"s regarding the organisation and implementation of test cod
   - for fixtures involving events we'll extract into files to allow re-use 
   - we're allowed to have some stray `test_*` methods in `.py` files, instead of class-methods only
   - we'll simply name test case classes `Test*`, we won't subclass `unittest.TestCase`
-2. [Integration] One `test*.py` file > One `class Test*` per feature > One `def test_*` method per case...
-3. [Unit] One `test*.py` file per ~~src file~~ ~~src class~~ feature (so add a new one when the profiling comes in) > One `class Test*` per Step > One `def test_*`per case
-4. simple `assert expr` without messages, to make use of pytest's Advanced Assertion Introspection (AAI). Not unittest's redundant `self.assertSomething`  
-5. Annotate with `#Arrange -> #Act -> #Assert`
+2. We'll use end-2-end tests as Integration ones, conscious it's not the same (as per the [pyramid](https://blogs.sap.com/2022/02/16/how-to-write-independent-unit-test-with-pytest-and-mock-techniques/))
+3. [Integration] One `test*.py` file > One `class Test*` per feature > One `def test_*` method per case...
+4. [Unit] One `test*.py` file per ~~src file~~ ~~src class~~ feature (so add a new one when the profiling comes in) > One `class Test*` per Step > One `def test_*`per case
+5. simple `assert expr` without messages, to make use of pytest's Advanced Assertion Introspection (AAI). Not unittest's redundant `self.assertSomething`  
+6. Annotate with `#Arrange -> #Act -> #Assert`
 
 ==TODO== Insert pic here of the PyCharm test output window highlighting the organisation
