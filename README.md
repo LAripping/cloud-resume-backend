@@ -12,6 +12,23 @@ Extra goodies
 - [ ] [Tests](#tests-written) (Integration & Unit)
 - [ ] CI/CD pipelines (using Github Actions)
 
+## Backend/Frontend Contract
+
+- The backend API expects to be accessed with an **HTTP GET** request at the registered endpoint (`/Prod/fetch-update-visitor-count`)
+- With no HTTP GET/POST parameters 
+- (The actual parameters processed are the `User-Agent` HTTP request header and the client's source IP) 
+- No authentication of any sort is required
+- The API will respond with a "200 OK" status code if at least the count was retrieved, otherwise with a "500 Internal Server Error"
+- When successful, the API will return a JSON with the following structure
+    ```json
+    {
+        "result": "added|found|error",
+        "visitors": <int>,
+        ["error" : "Error message thrown despite count retrieval"]
+    }
+    ```
+<hr/>
+
 
 ## Develop Locally
 > 💡 Notes for me
@@ -131,7 +148,12 @@ $ python -m pytest tests/unit -v
 $ python -m pytest tests/integration -v
 ```
 
+### All in one
 
+If you've set the `AWS_` env vars for the `boto-test-runner` IAM user and want the SAM CLI commands to use your default -> `samcli` IAM user, run it all as such:
+```bash
+recd && sam build && sam deploy --profile default && python3 -m pytest tests/
+```
 
 
 ### Troubleshooting 
@@ -167,7 +189,11 @@ $ python -m pytest tests/integration -v
     - [x] throw the "ConditionalCheckFailedException" -> returns "found"
     - [x] throw any other "ClientError" -> throws as well
     - [x] throw any other Exception -> throws as well
-  - Step 3: DB Scan
+  - Step 3: DB Scan : faking `boto3.client('dynamodb).scan()` to ... -> ensure our `db_scan()` ...
+    - [x] returns a legit count -> returns that number
+    - [x] throws -> we throw too
+    - [x] returns a resp with no "Count" key -> : this is intended to catch any upstream changes in boto3 that would break our app. Atm we won't handle it so we expect it to fail
+  - Step 4: 
 
 ### Design Decisions
 Documenting the "why"s regarding the organisation and implementation of test code 

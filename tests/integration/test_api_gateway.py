@@ -68,7 +68,7 @@ def delete_db_item(client_dyn, myIP, randUA):
 
 
 class TestApiGateway():
-    def test_api_gateway(self, api_endpoint):
+    def test_sanity(self, api_endpoint):
         """
         Call the API Gateway endpoint created and check the response matches the expected non-error format
         """

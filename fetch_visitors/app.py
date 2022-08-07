@@ -7,6 +7,7 @@ import botocore
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
+
 def lambda_handler(event, context):
     """
     Processes client info (UA/IP) and adds them to the DB if they don't exist
@@ -23,15 +24,16 @@ def lambda_handler(event, context):
     """
 
     result = ""
+    count = -1
     errorMsg = None
     fu = FetchUpdate(event)
     try:
-        ip,ua = fu.extract_ip_ua()
+        ip, ua = fu.extract_ip_ua()
         result = fu.db_putitem(ip, ua)
+        count = fu.db_scan()
     except Exception as e:
         errorMsg = str(e)
     finally:
-        count = fu.db_scan()
         return fu.send_resp(result, count, errorMsg)
 
 
@@ -51,11 +53,12 @@ class FetchUpdate:
     ERR_NO_IP = "Couldn't extract source IP! Skipping insertion"
     ERR_NO_UA = "Couldn't extract UA! Skipping insertion"
     ERR_PUT_ITEM = "Unexpected error while putting item: %s"
+    ERR_SCAN = "Unexpected error while scanning DB: %s"
 
     def __init__(self, event):
         self.event = event
         self.client = boto3.client('dynamodb', region_name='eu-west-2')
-        self.dynamodb = boto3.resource('dynamodb', region_name='eu-west-2') # needed for the exception
+        self.dynamodb = boto3.resource('dynamodb', region_name='eu-west-2')  # needed for the exception
 
     def extract_ip_ua(self) -> tuple:
         """
@@ -96,7 +99,7 @@ class FetchUpdate:
             log.error(FetchUpdate.ERR_NO_UA)
             raise Exception(FetchUpdate.ERR_NO_UA)
 
-        log.info("Successfully extracted IP (%s) and UA (%s)", ip,ua)
+        log.info("Successfully extracted IP (%s) and UA (%s)", ip, ua)
         return ip, ua
 
     def db_putitem(self, ip, ua) -> str:
@@ -128,8 +131,8 @@ class FetchUpdate:
                 log.error(FetchUpdate.ERR_PUT_ITEM, str(ce))
                 raise ce
         except Exception as e:
-            log.error(FetchUpdate.ERR_PUT_ITEM, str(e))     # her ewe only log FetchUpdate.ERR_PUT_ITEM,
-            raise e                                         # ...and not specify it, as we're interested in the orig msg
+            log.error(FetchUpdate.ERR_PUT_ITEM, str(e))  # here we only log FetchUpdate.ERR_PUT_ITEM,
+            raise e  # ...and not specify it, as we're interested in the orig msg
 
         return result
 
@@ -140,16 +143,21 @@ class FetchUpdate:
         :return: The number of items found in the DB
         :rtype: int
         """
-
-        scan_resp = self.client.scan(
-            TableName='VisitorsSam',
-            Select='COUNT',
-            FilterExpression="test <> :istest",
-            ExpressionAttributeValues={
-                ":istest": {"BOOL": True}
-            }
-        )
-        return scan_resp["Count"]
+        try:
+            scan_resp = self.client.scan(
+                TableName='VisitorsSam',
+                Select='COUNT',
+                FilterExpression="test <> :istest",
+                ExpressionAttributeValues={
+                    ":istest": {"BOOL": True}
+                }
+            )
+            log.debug("scan response: %s", json.dumps(scan_resp, indent=2))
+            log.info("Database queried")
+            return scan_resp["Count"]
+        except Exception as e:
+            log.error(FetchUpdate.ERR_SCAN, str(e))
+            raise e
 
     def send_resp(self, result, count, errorMsg: str) -> dict:
         """
@@ -160,23 +168,26 @@ class FetchUpdate:
         :return: The HTTP response object, including the JSON body, that is immediately returned by the lambda handler
         :rtype: dict
         """
+        jbody = {}
 
-        jbody = {
-                "result": "error" if errorMsg else result,
-                "visitors": count
-        }
         if errorMsg:
-            jbody.update( {"error":errorMsg} )
+            code = 500
+            result = "error"
+            error = errorMsg
+            jbody.update({"error": error})
+        else:
+            code = 200
 
+        jbody.update({"result" : result})
 
-        return {
-            'statusCode': 200,
+        if count != -1: # visitor count might have been retrieved despite prev errors
+            jbody.update({"visitors": count})
+
+        resp = {
+            'statusCode': code,
             "headers": {
                 "Content-Type": "application/json"
             },
             'body': json.dumps(jbody)
         }
-
-
-
-
+        return resp
