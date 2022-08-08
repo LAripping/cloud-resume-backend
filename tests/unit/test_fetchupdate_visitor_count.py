@@ -22,7 +22,6 @@ sample_db = [
 ]
 
 
-
 class TestExtractIPUA:
     def test_no_useragent(self, event_no_ua):
         """
@@ -171,3 +170,54 @@ class TestDbScan:
 
         assert "No 'Count' in dynamodb.scan() response!" in str(e.value)
         assert fu.client.scan.called_once()
+
+
+
+ERR_NO_COUNT = "Something broke, no count :("
+ERR_W_COUNT = "Something broke but we got the count!"
+RESULT_OK = "found"
+OK_COUNT = 4
+
+respSuccess = {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({
+                "result": RESULT_OK,
+                "visitors": OK_COUNT
+            }, sort_keys=True)
+        }
+
+respErrorButWithCount = {
+        "statusCode": 200,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps({
+            "result": "error",
+            "error": ERR_W_COUNT,
+            "visitors": OK_COUNT
+        }, sort_keys=True)
+    }
+
+
+respErrorNoCount ={
+        "statusCode": 500,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps({
+            "result": "error",
+            "error": ERR_NO_COUNT
+        }, sort_keys=True)
+    }
+
+
+
+class TestSendResp:
+    @pytest.mark.parametrize(
+        "errorMsg, count, result, expectedObj", [
+            (ERR_W_COUNT, OK_COUNT, "dummy", respErrorButWithCount),
+            (ERR_NO_COUNT, -1, "dummy", respErrorNoCount),
+            (None, OK_COUNT, RESULT_OK, respSuccess),
+        ])
+    def test_resp_expected_obj_based_on_args(self, errorMsg, count, result, expectedObj):
+        fu = FetchUpdate(None)
+        returnedObj = fu.send_resp(result,count,errorMsg)
+
+        assert returnedObj == expectedObj

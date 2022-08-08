@@ -4,7 +4,7 @@ import logging
 
 import botocore
 
-log = logging.getLogger()
+log = logging.getLogger("lambda-logger") # specify a name to ignore DEBUG messages from all other loggers
 log.setLevel(logging.DEBUG)
 
 
@@ -17,10 +17,13 @@ def lambda_handler(event, context):
         context (dict): ?
 
     Returns:
-        dict: A JSON with keys
+        dict: A dict with keys
             result (str): "added|found|error"
             visitors (int): N
-            error (str): Stringified exception message if thrown
+            error (str): Stringified exception message if thrown.
+
+            This will be passed to ``json.dumps``
+            https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html#python-handler-return
     """
 
     result = ""
@@ -159,35 +162,39 @@ class FetchUpdate:
             log.error(FetchUpdate.ERR_SCAN, str(e))
             raise e
 
-    def send_resp(self, result, count, errorMsg: str) -> dict:
+    def send_resp(self, result: str, count: int, errorMsg: str) -> dict:
         """
         Step 4: Create the HTTP response object incl. any errors thrown in the process
 
-        :param result: The result of the DB operation (added|found|error)
-        :param count: The number of items found previously in the DB
-        :return: The HTTP response object, including the JSON body, that is immediately returned by the lambda handler
+        :param result: The result of the DB operation ("added"|"found"|""-default)
+        :param count: The number of items found previously in the DB or -1 - default
+        :param errorMsg: Error thrown previously or None - default
+
+        :return: The HTTP response object, including the JSON body, that is immediately returned by the lambda handler.
+                    THE JSON MUST BE PASSED THROUGH  ``json.dumps`` FIRST!!
         :rtype: dict
         """
+        print("inside", result,count, errorMsg)
         jbody = {}
 
         if errorMsg:
-            code = 500
             result = "error"
-            error = errorMsg
-            jbody.update({"error": error})
-        else:
-            code = 200
+            jbody.update({"error": errorMsg})
 
         jbody.update({"result" : result})
 
         if count != -1: # visitor count might have been retrieved despite prev errors
             jbody.update({"visitors": count})
+            code = 200
+        else:
+            code = 500
 
         resp = {
             'statusCode': code,
             "headers": {
                 "Content-Type": "application/json"
             },
-            'body': json.dumps(jbody)
+            'body': json.dumps(jbody,sort_keys=True)
         }
+        print("returning", resp)
         return resp

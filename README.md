@@ -180,8 +180,6 @@ recd && sam build && sam deploy --profile default && python3 -m pytest tests/
   > Testing one single component at a time, to confirm that it operates in the right way. Helps you to isolate what is broken in your application and fix it faster  
   > "Per-Feature"
 
-  - Step 0: Class instantiation
-    - [ ] Boto Clients have been instantiated ok
   - Step 1: Extract IP & UA
     - [x] no `User-Agent` header is provided
   - Step 2: DB Put Item : faking `boto3.client('dynamodb').put_item()`to ... ->  ensure our `db_putitem()` ...
@@ -193,7 +191,10 @@ recd && sam build && sam deploy --profile default && python3 -m pytest tests/
     - [x] returns a legit count -> returns that number
     - [x] throws -> we throw too
     - [x] returns a resp with no "Count" key -> : this is intended to catch any upstream changes in boto3 that would break our app. Atm we won't handle it so we expect it to fail
-  - Step 4: 
+  - Step 4: Sending the HTTP Response : check the returned response
+    - [x] error has been previously thrown but count has been retrieved
+    - [x] error has been previously thrown, no count has been retrieved
+    - [x] no previous errors
 
 ### Design Decisions
 Documenting the "why"s regarding the organisation and implementation of test code 
@@ -204,9 +205,13 @@ Documenting the "why"s regarding the organisation and implementation of test cod
   - we're allowed to have some stray `test_*` methods in `.py` files, instead of class-methods only
   - we'll simply name test case classes `Test*`, we won't subclass `unittest.TestCase`
 2. We'll use end-2-end tests as Integration ones, conscious it's not the same (as per the [pyramid](https://blogs.sap.com/2022/02/16/how-to-write-independent-unit-test-with-pytest-and-mock-techniques/))
-3. [Integration] One `test*.py` file > One `class Test*` per feature > One `def test_*` method per case...
-4. [Unit] One `test*.py` file per ~~src file~~ ~~src class~~ feature (so add a new one when the profiling comes in) > One `class Test*` per Step > One `def test_*`per case
-5. simple `assert expr` without messages, to make use of pytest's Advanced Assertion Introspection (AAI). Not unittest's redundant `self.assertSomething`  
-6. Annotate with `#Arrange -> #Act -> #Assert`
+3. simple `assert expr` without messages, to make use of pytest's Advanced Assertion Introspection (AAI). Not unittest's redundant `self.assertSomething`  
+4. Annotate with `#Arrange -> #Act -> #Assert`
+5. [Integration] One `test*.py` file > One `class Test*` per feature > One `def test_*` method per case...
+6. [Unit] One `test*.py` file per ~~src file~~ ~~src class~~ feature (so add a new one when the profiling comes in) > One `class Test*` per Step > One `def test_*`per case
 
-==TODO== Insert pic here of the PyCharm test output window highlighting the organisation
+The organisation looks like this: 
+> Suite -> dir (integr/unit) -> script (component) -> class (step) -> method (case) [-> invocation (w. params)] 
+
+![](tests-organisation.png)
+
