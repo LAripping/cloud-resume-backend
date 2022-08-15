@@ -10,13 +10,12 @@ The SAM stack consists of:
 
 Extra goodies
 - [x] [Tests](#tests-written) (Integration & Unit)
-- [ ] CI/CD pipelines (using Github Actions)
+- [x] [CI/CD pipeline](.github/workflows/sam-pipeline.yml) (using Github Actions)
 
 ## API Specification
 
 Documentation for the API exposed that bridges the frontend and backend code ([link](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/LAripping/cloud-resume-backend/master/apispec.yml)) 
 
-[//]: # (![]&#40;apispec-expand.png&#41;)
 
 ![](apispec-collaps.png)
 
