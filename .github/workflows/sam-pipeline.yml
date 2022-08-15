@@ -24,7 +24,7 @@ jobs:
           aws-region: eu-west-2
 
       - name: Build SAM template/Lambda Python code
-        run: sam build --use-container
+        run: sam build
 
       - name: Run unit tests
         # run: STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
