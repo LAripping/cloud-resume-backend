@@ -1,0 +1,44 @@
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the latest version of the code into the runner fs
+        uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - uses: aws-actions/setup-sam@v1
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID__samcli }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY__samcli }}
+          aws-region: eu-west-2
+
+      - name: Build SAM template/Lambda Python code
+        run: sam build --use-container
+
+      - name: Run unit tests
+        # run: STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
+        run: python3 -m pytest tests/unit -v
+
+      - name: Deploy stack resources on AWS
+        run: sam deploy --no-fail-on-empty-changeset
+
+      - name: Run integration tests
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID__bototestrunner }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY__bototestrunner }}
+          aws-region: eu-west-2
+
+        # run: STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
+        run: python3 -m pytest tests/integration -v
+
