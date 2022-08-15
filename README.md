@@ -9,7 +9,7 @@ The SAM stack consists of:
 - A Python Lambda Function : serving as the controller that bridges the two
 
 Extra goodies
-- [ ] [Tests](#tests-written) (Integration & Unit)
+- [x] [Tests](#tests-written) (Integration & Unit)
 - [ ] CI/CD pipelines (using Github Actions)
 
 ## Backend/Frontend Contract

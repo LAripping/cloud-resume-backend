@@ -1,0 +1,77 @@
+openapi: 3.0.3
+info:
+  title: Cloud Resume Backend API
+  description: |-
+    This is a minimal API designed to bridge the static HTML/CSS/JS frontend with the AWS-hosted backend of my Cloud Resume application.  
+
+    It consists of a single endpoint which the frontend fetches, which currently provides the number of visitors that have visited the page, and saves the visitor info from that request if not seen before. 
+
+  version: 1.0.0
+externalDocs:
+  description: Read more on the project's repository
+  url: https://github.com/LAripping/cloud-resume-backend
+servers:
+  - url: https://bxmqz5pjl0.execute-api.eu-west-2.amazonaws.com/Prod
+tags:
+  - name: Fetch / Update Visitor Count
+
+paths:
+  /fetch-update-visitor-count:
+    get:
+      tags:
+        - Fetch / Update Visitor Count
+      summary: Fetch the number of visitors
+      responses:
+        '200':
+          description: Successful Operation. The number of visitors was retrieved despite any errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/success'
+        '500':
+          description: Error occurred that prevented fetching of the visitor count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+components:
+  schemas:
+    success:
+      required:
+          - result
+          - visitors
+      type: object
+      properties:
+        result:
+          type: string
+          # description: Result of the DB operation
+          example: found
+          enum:
+            - found
+            - added
+            - error
+        visitors:
+          type: integer
+          #format: int64
+          example: 10
+        error:
+          type: string
+          example: "Non-fatal error message"
+    error:
+      required:
+          - result
+          - error
+      type: object
+      properties:
+        result:
+          type: string
+          # description: Result of the DB operation
+          example: error
+          enum:
+            - found
+            - added
+            - error
+        error:
+          type: string
+          example: "Failed to even load visitor count"
