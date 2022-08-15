@@ -16,7 +16,8 @@ jobs:
 
       - uses: aws-actions/setup-sam@v1
 
-      - uses: aws-actions/configure-aws-credentials@v1
+      - name: Configure AWS credentials for SAM cli
+        uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID__samcli }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY__samcli }}
@@ -32,13 +33,14 @@ jobs:
       - name: Deploy stack resources on AWS
         run: sam deploy --no-fail-on-empty-changeset
 
-      - name: Run integration tests
+      - name: Configure AWS credentials for Python test runner
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID__bototestrunner }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY__bototestrunner }}
           aws-region: eu-west-2
 
+      - name: Run integration tests
         # run: STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
         run: python3 -m pytest tests/integration -v
 
