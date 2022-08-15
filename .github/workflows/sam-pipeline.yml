@@ -29,7 +29,6 @@ jobs:
         run: sam build
 
       - name: Run unit tests
-        # run: STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
         run: python3 -m pytest tests/unit -v
 
       - name: Deploy stack resources on AWS
@@ -43,6 +42,5 @@ jobs:
           aws-region: eu-west-2
 
       - name: Run integration tests
-        # run: STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
-        run: python3 -m pytest tests/integration -v
+        run: STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2) && python3 -m pytest tests/integration -v
 
