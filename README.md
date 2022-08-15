@@ -12,23 +12,13 @@ Extra goodies
 - [x] [Tests](#tests-written) (Integration & Unit)
 - [ ] CI/CD pipelines (using Github Actions)
 
-## Backend/Frontend Contract
+## API Specification
 
-- The backend API expects to be accessed with an **HTTP GET** request at the registered endpoint (`/Prod/fetch-update-visitor-count`)
-- With no HTTP GET/POST parameters 
-- (The actual parameters processed are the `User-Agent` HTTP request header and the client's source IP) 
-- No authentication of any sort is required
-- The API will respond with a "200 OK" status code if at least the count was retrieved, otherwise with a "500 Internal Server Error"
-- When successful, the API will return a JSON with the following structure
-    ```json
-    {
-        "result": "added|found|error",
-        "visitors": <int>,
-        ["error" : "Error message thrown despite count retrieval"]
-    }
-    ```
-<hr/>
+Documentation for the API exposed that bridges the frontend and backend code ([link](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/LAripping/cloud-resume-backend/master/apispec.yml)) 
 
+[//]: # (![]&#40;apispec-expand.png&#41;)
+
+![](apispec-collaps.png)
 
 ## Develop Locally
 > 💡 Notes for me
