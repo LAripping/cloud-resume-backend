@@ -41,6 +41,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY__bototestrunner }}
           aws-region: eu-west-2
 
+      - name: Extract the name of the SAM stack dynamically
+        run: echo "STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)" >> $GITHUB_ENV
+
       - name: Run integration tests
-        run: STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2) && python3 -m pytest tests/integration -v
+        run: python3 -m pytest tests/integration -v
 
