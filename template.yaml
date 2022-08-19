@@ -50,6 +50,8 @@ Resources:
           AttributeType: "S"
         - AttributeName: "UA"
           AttributeType: "S"
+        - AttributeName: "test"
+          AttributeType: "B"
       KeySchema:
         - AttributeName: "IP"
           KeyType: "HASH"
