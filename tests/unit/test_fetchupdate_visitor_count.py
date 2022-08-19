@@ -180,7 +180,7 @@ OK_COUNT = 4
 
 respSuccess = {
             "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
+            "headers": {"Content-Type": "application/json",  "Access-Control-Allow-Origin": "https://resume.laripping.com"},
             "body": json.dumps({
                 "result": RESULT_OK,
                 "visitors": OK_COUNT
@@ -189,7 +189,7 @@ respSuccess = {
 
 respErrorButWithCount = {
         "statusCode": 200,
-        "headers": {"Content-Type": "application/json"},
+        "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "https://resume.laripping.com"},
         "body": json.dumps({
             "result": "error",
             "error": ERR_W_COUNT,
@@ -200,7 +200,7 @@ respErrorButWithCount = {
 
 respErrorNoCount ={
         "statusCode": 500,
-        "headers": {"Content-Type": "application/json"},
+        "headers": {"Content-Type": "application/json",  "Access-Control-Allow-Origin": "https://resume.laripping.com"},
         "body": json.dumps({
             "result": "error",
             "error": ERR_NO_COUNT
