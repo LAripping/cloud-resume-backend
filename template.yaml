@@ -44,7 +44,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: VisitorsSam
+      TableName: VisitorsSam2
       AttributeDefinitions:
         - AttributeName: "IP"
           AttributeType: "S"
