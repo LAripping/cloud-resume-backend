@@ -44,20 +44,16 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
-      TableName: VisitorsSam2
+      TableName: VisitorsSam
       AttributeDefinitions:
         - AttributeName: "IP"
           AttributeType: "S"
         - AttributeName: "UA"
           AttributeType: "S"
-        - AttributeName: "test"
-          AttributeType: "B"
       KeySchema:
         - AttributeName: "IP"
           KeyType: "HASH"
         - AttributeName: "UA"
-          KeyType: "RANGE"
-        - AttributeName: "test"
           KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: "2"
