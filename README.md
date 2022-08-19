@@ -46,7 +46,7 @@ $ STACK_NAME=$(grep stack_name samconfig.toml | cut -d \" -f 2)
 ```
 4. Set an alias to un-screw `os.getcwd()` after Docker-juggling (see the relevant [Troubleshooting](#troubleshooting) issue)
 ```bash
-$ alias recd=cd ../ && cd -
+$ alias recd="cd ../ && cd -"
 ```
 
 

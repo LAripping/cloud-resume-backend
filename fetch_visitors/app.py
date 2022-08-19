@@ -192,7 +192,12 @@ class FetchUpdate:
         resp = {
             'statusCode': code,
             "headers": {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "https://resume.laripping.com",
+                # This will probably lead to CORS error when the req is made from localhost for testing...
+                # Should we need to enable this, we should add code that parses the "Origin" request header
+                # and mirrors it back into the ACAO header IFF it's an allowed one.
+                # See this: https://stackoverflow.com/questions/1653308/access-control-allow-origin-multiple-origin-domains
             },
             'body': json.dumps(jbody,sort_keys=True)
         }

@@ -5,6 +5,12 @@ Description: SAM template for the cloud resume backend stack
 Globals:
   Function:
     Timeout: 10
+#  Api:
+#    Cors:
+#      # This only sets the ACA* headers on Preflight (OPTIONS) reqs. Our expected use case is a simple GET so no preflight occurs
+#      # Instead, to allow Cross-Origin fetch from our frontend, we need to return these headers via code in the GET resp
+#      AllowOrigin: "'https://resume.laripping.com'"
+#      AllowMethods: "'GET'"
 
 Resources:
   FetchVisitorsFunction:
