@@ -30,6 +30,7 @@ def lambda_handler(event, context):
     count = -1
     errorMsg = None
     fu = FetchUpdate(event)
+    origin = None
     try:
         ip, ua = fu.extract_ip_ua()
         origin = fu.extract_origin()
