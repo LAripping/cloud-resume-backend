@@ -218,6 +218,6 @@ class TestSendResp:
         ])
     def test_resp_expected_obj_based_on_args(self, errorMsg, count, result, expectedObj):
         fu = FetchUpdate(None)
-        returnedObj = fu.send_resp(result,count,errorMsg)
+        returnedObj = fu.send_resp(result,count,errorMsg,"https://resume.laripping.com")
 
         assert returnedObj == expectedObj
