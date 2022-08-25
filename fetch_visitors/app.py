@@ -30,7 +30,7 @@ def lambda_handler(event, context):
     count = -1
     errorMsg = None
     fu = FetchUpdate(event)
-    origin = None
+    origin = ""
     try:
         ip, ua = fu.extract_ip_ua()
         origin = fu.extract_origin()
@@ -120,6 +120,8 @@ class FetchUpdate:
         """
         TODO untested!
         Step 1.5: Try to get the requestor's Origin to process our ACAO response in Step 4 below
+        If no Origin is found, we just return the empty string and in Step 4 we include no ACAO
+
         :return: the client's Origin domain
         :raises: Exception when Origin can't be found
         """
@@ -131,8 +133,7 @@ class FetchUpdate:
                 and ("Origin" in self.event["headers"]):
             origin = self.event["headers"]["Origin"]
         else:
-            log.error(FetchUpdate.ERR_NO_ORIGIN)
-            raise Exception(FetchUpdate.ERR_NO_ORIGIN)
+            return ""
 
         log.info("Successfully extracted Origin %s", origin)
         return origin
@@ -201,7 +202,7 @@ class FetchUpdate:
         :param result: The result of the DB operation ("added"|"found"|""-default)
         :param count: The number of items found previously in the DB or -1 - default
         :param errorMsg: Error thrown previously or None - default
-        :param origin: Request origin to process response ACAO header
+        :param origin: Request origin to process response ACAO header OR ""
 
         :return: The HTTP response object, including the JSON body, that is immediately returned by the lambda handler.
                     THE JSON MUST BE PASSED THROUGH  ``json.dumps`` FIRST!!
@@ -221,18 +222,18 @@ class FetchUpdate:
         else:
             code = 500
 
-        # Parse the "Origin" req header and mirror it back into the ACAO header IFF it's an allowed one.
+        headers = { "Content-Type": "application/json"}
+        # If there's an Origin header, IFF it's an allowed one,  mirror it back into the ACAO header
         # https://stackoverflow.com/questions/1653308/access-control-allow-origin-multiple-origin-domains
-        acao = self.DEFAULT_ACAO
-        if origin in self.ORIGIN_WHITELIST:
-            acao = origin
+        if origin:
+            acao = self.DEFAULT_ACAO
+            if origin in self.ORIGIN_WHITELIST:
+                acao = origin
+            headers.update({"Access-Control-Allow-Origin": acao})
 
         resp = {
             'statusCode': code,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": acao,
-            },
+            "headers": headers,
             'body': json.dumps(jbody,sort_keys=True)
         }
         return resp
