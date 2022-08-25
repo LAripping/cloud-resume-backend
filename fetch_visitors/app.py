@@ -32,12 +32,13 @@ def lambda_handler(event, context):
     fu = FetchUpdate(event)
     try:
         ip, ua = fu.extract_ip_ua()
+        origin = fu.extract_origin()
         result = fu.db_putitem(ip, ua)
         count = fu.db_scan()
     except Exception as e:
         errorMsg = str(e)
     finally:
-        return fu.send_resp(result, count, errorMsg)
+        return fu.send_resp(result, count, errorMsg, origin)
 
 
 class FetchUpdate:
@@ -55,8 +56,17 @@ class FetchUpdate:
 
     ERR_NO_IP = "Couldn't extract source IP! Skipping insertion"
     ERR_NO_UA = "Couldn't extract UA! Skipping insertion"
+    ERR_NO_ORIGIN = "Couldn't extract Origin!"
     ERR_PUT_ITEM = "Unexpected error while putting item: %s"
     ERR_SCAN = "Unexpected error while scanning DB: %s"
+
+    DEFAULT_ACAO = "https://resume.laripping.com"
+    ORIGIN_WHITELIST = [
+        DEFAULT_ACAO,
+        "http://localhost:5555",
+        "http://127.0.0.1:5555",
+        "http://127.0.0.1:8000",
+    ]
 
     def __init__(self, event):
         self.event = event
@@ -104,6 +114,27 @@ class FetchUpdate:
 
         log.info("Successfully extracted IP (%s) and UA (%s)", ip, ua)
         return ip, ua
+
+    def extract_origin(self) -> str:
+        """
+        TODO untested!
+        Step 1.5: Try to get the requestor's Origin to process our ACAO response in Step 4 below
+        :return: the client's Origin domain
+        :raises: Exception when Origin can't be found
+        """
+
+        if ("headers" in self.event) \
+                and ("origin" in self.event["headers"]):
+            origin = self.event["headers"]["origin"]
+        elif ("headers" in self.event) \
+                and ("Origin" in self.event["headers"]):
+            origin = self.event["headers"]["Origin"]
+        else:
+            log.error(FetchUpdate.ERR_NO_ORIGIN)
+            raise Exception(FetchUpdate.ERR_NO_ORIGIN)
+
+        log.info("Successfully extracted Origin %s", origin)
+        return origin
 
     def db_putitem(self, ip, ua) -> str:
         """
@@ -162,19 +193,19 @@ class FetchUpdate:
             log.error(FetchUpdate.ERR_SCAN, str(e))
             raise e
 
-    def send_resp(self, result: str, count: int, errorMsg: str) -> dict:
+    def send_resp(self, result: str, count: int, errorMsg: str, origin: str) -> dict:
         """
         Step 4: Create the HTTP response object incl. any errors thrown in the process
 
         :param result: The result of the DB operation ("added"|"found"|""-default)
         :param count: The number of items found previously in the DB or -1 - default
         :param errorMsg: Error thrown previously or None - default
+        :param origin: Request origin to process response ACAO header
 
         :return: The HTTP response object, including the JSON body, that is immediately returned by the lambda handler.
                     THE JSON MUST BE PASSED THROUGH  ``json.dumps`` FIRST!!
         :rtype: dict
         """
-        print("inside", result,count, errorMsg)
         jbody = {}
 
         if errorMsg:
@@ -189,17 +220,18 @@ class FetchUpdate:
         else:
             code = 500
 
+        # Parse the "Origin" req header and mirror it back into the ACAO header IFF it's an allowed one.
+        # https://stackoverflow.com/questions/1653308/access-control-allow-origin-multiple-origin-domains
+        acao = self.DEFAULT_ACAO
+        if origin in self.ORIGIN_WHITELIST:
+            acao = origin
+
         resp = {
             'statusCode': code,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "https://resume.laripping.com",
-                # This will probably lead to CORS error when the req is made from localhost for testing...
-                # Should we need to enable this, we should add code that parses the "Origin" request header
-                # and mirrors it back into the ACAO header IFF it's an allowed one.
-                # See this: https://stackoverflow.com/questions/1653308/access-control-allow-origin-multiple-origin-domains
+                "Access-Control-Allow-Origin": acao,
             },
             'body': json.dumps(jbody,sort_keys=True)
         }
-        print("returning", resp)
         return resp
