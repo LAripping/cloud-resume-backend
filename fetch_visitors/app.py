@@ -1,7 +1,7 @@
 import json
 import boto3
 import logging
-
+import os
 import botocore
 
 log = logging.getLogger("lambda-logger") # specify a name to ignore DEBUG messages from all other loggers
@@ -57,11 +57,12 @@ class FetchUpdate:
 
     ERR_NO_IP = "Couldn't extract source IP! Skipping insertion"
     ERR_NO_UA = "Couldn't extract UA! Skipping insertion"
+    ERR_NO_ENV = "Environment variable %s required not found!"
     ERR_NO_ORIGIN = "Couldn't extract Origin!"
     ERR_PUT_ITEM = "Unexpected error while putting item: %s"
     ERR_SCAN = "Unexpected error while scanning DB: %s"
-
-    DEFAULT_ACAO = "https://resume.laripping.com"
+    TABLE_NAME = ""  # set by the env var API_URL on __init__()
+    DEFAULT_ACAO = ""   # set by the env var API_URL on __init__()
     ORIGIN_WHITELIST = [
         DEFAULT_ACAO,
         "http://localhost:5555",
@@ -73,6 +74,13 @@ class FetchUpdate:
         self.event = event
         self.client = boto3.client('dynamodb', region_name='eu-west-2')
         self.dynamodb = boto3.resource('dynamodb', region_name='eu-west-2')  # needed for the exception
+        try:
+            self.DEFAULT_ACAO = os.environ["API_URL"]
+            self.TABLE_NAME = os.environ["TABLE_NAME"]
+        except KeyError as e:
+            log.error(FetchUpdate.ERR_NO_ENV, str(e.args[0]))
+            raise Exception(FetchUpdate.ERR_NO_ENV)
+        log.info("Init'ed FetchUpdate - API URL: %s", self.DEFAULT_ACAO)
 
     def extract_ip_ua(self) -> tuple:
         """
@@ -149,7 +157,7 @@ class FetchUpdate:
 
         try:
             putitem_resp = self.client.put_item(
-                TableName='VisitorsSam',  # TODO extract TBL_NAME constant
+                TableName=self.TABLE_NAME,
                 Item={
                     "UA": {"S": ua},
                     "IP": {"S": ip}
@@ -181,7 +189,7 @@ class FetchUpdate:
         """
         try:
             scan_resp = self.client.scan(
-                TableName='VisitorsSam',
+                TableName=self.TABLE_NAME,
                 Select='COUNT',
                 FilterExpression="test <> :istest",
                 ExpressionAttributeValues={

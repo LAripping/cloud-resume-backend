@@ -394,3 +394,7 @@ $RECYCLE.BIN/
 # Added directly by LAripping
 .idea
 boto_user_credentials.csv
+
+
+# avoid commiting actual values used during build
+env2
