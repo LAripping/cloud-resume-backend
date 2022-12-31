@@ -7,5 +7,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger remote pipeline 
-        run: | 
-        curl -XPOST -u "${{ secrets.PAT_USERNAME}}:${{secrets.PAT_TOKEN}}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" https://api.github.com/repos/LAripping/cloud-resume-terraform/dispatches --data '{"event_type": "tf_build", "client_payload":{"source":"backend"}}'
+        run: "curl --fail -XPOST -H \"Authorization: Bearer ${{ secrets.PAT }}\" -H \"Accept: application/vnd.github.everest-preview+json\" -H \"Content-Type: application/json\" https://api.github.com/repos/LAripping/cloud-resume-terraform/dispatches --data '{\"event_type\": \"tf_build\", \"client_payload\":{\"source\":\"backend\"}}'"
