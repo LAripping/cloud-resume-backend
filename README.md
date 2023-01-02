@@ -54,7 +54,7 @@ docker build -t fetch-update-visitors:latest .
 
 2. Assume Lambda's IAM role and specify the temp token into the env file 
 ```bash
-assume-role.sh env
+assume-role.sh tf-lambda-role env
 ```
 
 3. Start the container, specifying the env vars:
